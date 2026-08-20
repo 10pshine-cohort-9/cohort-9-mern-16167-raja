@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const pinoHttp = require('pino-http');
+const connectDB = require('./src/config/db');
 
 const app = express();
 
@@ -44,6 +45,8 @@ let PORT = parseInt(process.env.PORT, 10);
 if (isNaN(PORT) || PORT < 0 || PORT > 65535) {
     PORT = 5000;
 }
+
+connectDB(); 
 
 const server = app.listen(PORT, () => {
     console.log(`Server successfully started on port ${server.address().port}`);
