@@ -46,8 +46,8 @@ if (isNaN(PORT) || PORT < 0 || PORT > 65535) {
     PORT = 5000;
 }
 
-connectDB(); 
-
-const server = app.listen(PORT, () => {
-    console.log(`Server successfully started on port ${server.address().port}`);
+connectDB().then(() => {
+    const server = app.listen(PORT, () => {
+        console.log(`Server successfully started on port ${server.address().port}`);
+    });
 });
