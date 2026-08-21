@@ -6,13 +6,19 @@ const connectDB = async () => {
         console.log(`MongoDB Connected successfully: ${conn.connection.host}`);
 
         mongoose.connection.once('disconnected', () => {
-            console.error('MongoDB disconnected unexpectedly. Shutting down server to prevent data loss.');
-            process.exit(1); 
+            console.error('MongoDB disconnected. Attempting to reconnect...');
+            
+            setTimeout(() => {
+                if (mongoose.connection.readyState === 0) {
+                    console.error('MongoDB failed to reconnect. Shutting down.');
+                    process.exit(1);
+                }
+            }, 5000);
         });
 
     } catch (error) {
         console.error(`MongoDB Initial Connection Error: ${error.message}`);
-        process.exit(1); 
+        process.exit(1);
     }
 };
 
