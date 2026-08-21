@@ -4,8 +4,9 @@ const generateToken = require('../utils/generateToken');
 const registerUser = async (req, res, next) => {
     try {
         const { name, email, password } = req.body;
+        const normalizedEmail = email.toLowerCase();
 
-        const userExists = await User.findOne({ email });
+        const userExists = await User.findOne({ email: normalizedEmail });
         if (userExists) {
             const error = new Error('User already exists');
             error.statusCode = 400;
@@ -14,8 +15,15 @@ const registerUser = async (req, res, next) => {
 
         const user = await User.create({
             name,
-            email,
+            email: normalizedEmail,
             password
+        }).catch((err) => {
+            if (err.code === 11000) {
+                const duplicateError = new Error('User already exists');
+                duplicateError.statusCode = 400;
+                throw duplicateError;
+            }
+            throw err;
         });
 
         res.status(201).json({
@@ -32,8 +40,9 @@ const registerUser = async (req, res, next) => {
 const loginUser = async (req, res, next) => {
     try {
         const { email, password } = req.body;
+        const normalizedEmail = email.toLowerCase();
 
-        const user = await User.findOne({ email }).select('+password');
+        const user = await User.findOne({ email: normalizedEmail }).select('+password');
 
         if (user && (await user.matchPassword(password))) {
             res.status(200).json({

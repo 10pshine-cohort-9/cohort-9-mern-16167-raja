@@ -59,4 +59,7 @@ connectDB().then(() => {
     const server = app.listen(PORT, () => {
         console.log(`Server successfully started on port ${server.address().port}`);
     });
+}).catch((error) => {
+    console.error(`Failed to start server: ${error.message}`);
+    process.exit(1);
 });
