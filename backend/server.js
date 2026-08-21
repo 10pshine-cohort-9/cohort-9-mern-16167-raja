@@ -1,12 +1,19 @@
+// --- IMPORTS ---
 require('dotenv').config();
 const express = require('express');
 const pinoHttp = require('pino-http');
 const connectDB = require('./src/config/db');
+const authRoutes = require('./src/routes/authRoutes');
 
+// --- APP INITIALIZATION ---
 const app = express();
 
+// --- MIDDLEWARE ---
 app.use(pinoHttp());
 app.use(express.json());
+
+// --- ROUTES ---
+app.use('/api/auth', authRoutes);
 
 app.get('/api/health', (req, res) => {
     res.status(200).json({
@@ -15,6 +22,7 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// --- ERROR HANDLING ---
 app.use((err, req, res, next) => {
     if (req.log) {
         req.log.error(err);
@@ -41,6 +49,7 @@ app.use((err, req, res, next) => {
     });
 });
 
+// --- SERVER STARTUP ---
 let PORT = parseInt(process.env.PORT, 10);
 if (isNaN(PORT) || PORT < 0 || PORT > 65535) {
     PORT = 5000;
