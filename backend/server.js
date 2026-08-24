@@ -7,6 +7,7 @@ const authRoutes = require('./src/routes/authRoutes');
 const noteRoutes = require('./src/routes/noteRoutes');
 
 // --- APP INITIALIZATION ---
+/** @type {import('express').Application} */
 const app = express();
 
 // --- MIDDLEWARE ---

@@ -1,7 +1,9 @@
 const express = require('express');
-const router = express.Router();
 const { getNotes, createNote, updateNote, deleteNote } = require('../controllers/noteController');
 const { protect } = require('../middlewares/authMiddleware');
+
+/** @type {import('express').Router} */
+const router = express.Router();
 
 router.use(protect);
 

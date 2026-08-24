@@ -1,5 +1,6 @@
 const Note = require('../models/Note');
 
+/** @type {import('express').RequestHandler} */
 const getNotes = async (req, res, next) => {
     try {
         const notes = await Note.find({ user: req.user._id });
@@ -9,6 +10,7 @@ const getNotes = async (req, res, next) => {
     }
 };
 
+/** @type {import('express').RequestHandler} */
 const createNote = async (req, res, next) => {
     try {
         const { title, content } = req.body;
@@ -31,6 +33,7 @@ const createNote = async (req, res, next) => {
     }
 };
 
+/** @type {import('express').RequestHandler} */
 const updateNote = async (req, res, next) => {
     try {
         const { title, content } = req.body;
@@ -49,8 +52,8 @@ const updateNote = async (req, res, next) => {
             throw error;
         }
 
-        note.title = title || note.title;
-        note.content = content || note.content;
+        if (title !== undefined) note.title = title;
+        if (content !== undefined) note.content = content;
         
         const updatedNote = await note.save();
         res.status(200).json(updatedNote);
@@ -59,6 +62,7 @@ const updateNote = async (req, res, next) => {
     }
 };
 
+/** @type {import('express').RequestHandler} */
 const deleteNote = async (req, res, next) => {
     try {
         const note = await Note.findById(req.params.id);
