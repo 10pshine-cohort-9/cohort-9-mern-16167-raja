@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken'); // <-- NEW: Added JWT import
 const pinoHttp = require('pino-http');
 const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
@@ -27,13 +28,27 @@ const io = new Server(server, {
     }
 });
 
+// NEW: Authenticate Socket.IO connections before allowing them to join a room
+io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (!token) {
+        return next(new Error('Authentication error: Missing token'));
+    }
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        socket.user = decoded; // Attach the decoded payload
+        next();
+    } catch (error) {
+        next(new Error('Authentication error: Invalid token'));
+    }
+});
+
 io.on('connection', (socket) => {
-    socket.on('setup', (userData) => {
-        if (userData && userData._id) {
-            socket.join(userData._id.toString());
-            socket.emit('connected');
-        }
-    });
+    // SECURE: Join room using the verified token ID, ignoring client-supplied data
+    if (socket.user && socket.user.id) {
+        socket.join(socket.user.id.toString());
+        socket.emit('connected');
+    }
 
     socket.on('disconnect', () => {
         // Disconnection handled automatically

@@ -13,5 +13,5 @@ The React Compiler is not enabled on this template because of its impact on dev 
 
 ## Linting
 
-This project is pre-configured with TypeScript and ESLint for code quality. Run the linter using:
+This project is pre-configured with ESLint for code quality. Currently, the linting scope is explicitly configured to analyze JavaScript and JSX files (`**/*.{js,jsx}`). To lint TypeScript files (`.ts`, `.tsx`), you must extend the `eslint.config.js` with TypeScript ESLint support. Run the current linter using:
 `npm run lint`

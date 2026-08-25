@@ -34,8 +34,12 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const userInfo = getValidSession();
 
+  // --- NEW: Stable primitive dependencies for Socket.IO ---
+  const token = userInfo?.token;
+  const userId = userInfo?._id;
+
   useEffect(() => {
-    if (!userInfo) {
+    if (!token) {
       navigate('/login');
       return;
     }
@@ -46,7 +50,7 @@ const Dashboard = () => {
   const fetchNotes = async () => {
     try {
       setIsLoading(true);
-      const config = { headers: { Authorization: `Bearer ${userInfo?.token}` } };
+      const config = { headers: { Authorization: `Bearer ${token}` } };
       const { data } = await axios.get<Note[]>('/api/notes', config);
       setNotes(data);
     } catch (err: unknown) {
@@ -60,14 +64,16 @@ const Dashboard = () => {
     }
   };
 
-  // --- Real-time Socket.IO Sync ---
+  // --- UPDATED: Secure, Stable Real-time Socket.IO Sync ---
   useEffect(() => {
-    if (!userInfo) return;
+    if (!token || !userId) return;
 
-    const socket = io('http://localhost:5000');
-
-    socket.on('connect', () => {
-      socket.emit('setup', userInfo);
+    // Use environment variable fallback for production readiness
+    const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+    
+    // Pass the token securely in the handshake
+    const socket = io(SOCKET_URL, {
+      auth: { token }
     });
 
     socket.on('noteCreated', (newNote: Note) => {
@@ -90,7 +96,7 @@ const Dashboard = () => {
     return () => {
       socket.disconnect();
     };
-  }, [userInfo]);
+  }, [token, userId]); // <-- Effect only re-runs if these string values change
 
   const handleSubmitNote = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -102,7 +108,7 @@ const Dashboard = () => {
     }
 
     try {
-      const config = { headers: { Authorization: `Bearer ${userInfo?.token}` } };
+      const config = { headers: { Authorization: `Bearer ${token}` } };
       const cleanContent = DOMPurify.sanitize(content);
       
       if (editingNoteId) {
@@ -137,7 +143,7 @@ const Dashboard = () => {
   const handleDeleteNote = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this note?')) return;
     try {
-      const config = { headers: { Authorization: `Bearer ${userInfo?.token}` } };
+      const config = { headers: { Authorization: `Bearer ${token}` } };
       await axios.delete(`/api/notes/${id}`, config);
       setNotes((currentNotes) => currentNotes.filter((note) => note._id !== id));
     } catch (err: unknown) {
@@ -188,8 +194,12 @@ const Dashboard = () => {
         const importedData = JSON.parse(e.target?.result as string);
         if (!Array.isArray(importedData)) throw new Error('Invalid format');
 
+        // --- NEW: Strict pre-validation of entire array before making API calls ---
+        const isValid = importedData.every(item => item !== null && typeof item === 'object' && !Array.isArray(item));
+        if (!isValid) throw new Error('Invalid format');
+
         setIsLoading(true);
-        const config = { headers: { Authorization: `Bearer ${userInfo?.token}` } };
+        const config = { headers: { Authorization: `Bearer ${token}` } };
         
         for (const note of importedData) {
           const cleanContent = DOMPurify.sanitize(note.content || '');
