@@ -4,8 +4,10 @@ const express = require('express');
 const pinoHttp = require('pino-http');
 const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
+const noteRoutes = require('./src/routes/noteRoutes');
 
 // --- APP INITIALIZATION ---
+/** @type {import('express').Application} */
 const app = express();
 
 // --- MIDDLEWARE ---
@@ -14,6 +16,7 @@ app.use(express.json());
 
 // --- ROUTES ---
 app.use('/api/auth', authRoutes);
+app.use('/api/notes', noteRoutes);
 
 app.get('/api/health', (req, res) => {
     res.status(200).json({
