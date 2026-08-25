@@ -40,6 +40,8 @@ This project aims to provide a full-stack web application that allows users to c
 *   **`main`**: Contains Production-ready code.
 *   **`develop`**: The primary integration branch containing the latest development changes. **All PRs must target this branch.**
 
+* **Stacked Branching Note:** Because feature branches are built sequentially before integration into `develop`, unmerged upstream files can be synchronized into new feature branches using `git merge feature/backend/<previous-feature>` to maintain a continuous codebase.
+
 ### Branch Naming Conventions
 *   **Features:** `feature/frontend/<feature-name>` or `feature/backend/<feature-name>`
 *   **Bugfixes:** `bugfix/frontend/<bug-description>` or `bugfix/backend/<bug-description>`
@@ -89,5 +91,75 @@ This project strictly enforces a Layered Architecture to maintain separation of 
 
 ---
 
-## 🔄 Up Next: Module 3 (MongoDB & Mongoose Database Connection)
-* **Objective:** Configure MongoDB connection logic using Mongoose, handle retry/connection lifecycle events, and isolate configuration into a dedicated `config/` module.
+### 📝 Notes App Progress Report: Module 3 (Database Configuration)
+* **Current State:** Designed and integrated the data persistence layer using Mongoose. Configured an asynchronous connection lifecycle that guarantees the HTTP server only binds to a port after the database is fully connected. Implemented robust crash-handling that gracefully terminates the Node process if the initial connection fails or if the MongoDB connection drops unexpectedly during runtime.
+* **Completed Files:**
+  * `backend/src/config/db.js` (NEW)
+  * `backend/server.js` (Updated)
+  * `backend/package.json` (Updated)
+  * `backend/.env` (Updated)
+  * `README.md` (Updated)
+* **Packages Added:** `mongoose`
+* **Status:** PR #3 Created (`feature/backend/database-setup`), CodeRabbit Checks Passed.
+
+---
+
+### 📝 Notes App Progress Report: Module 4 (Data Modeling & Schema Design)
+* **Current State:** Designed and implemented strict Mongoose schemas for the `User` and `Note` entities. Configured advanced validation constraints, email regex formatting, and security exclusions (e.g., hiding password hashes from standard queries). Established relational mapping by linking Note documents to their authoring User via `ObjectId` references. 
+* **Completed Files:**
+  * `backend/src/models/User.js` (NEW)
+  * `backend/src/models/Note.js` (NEW)
+  * `README.md` (Updated)
+* **Status:** PR #4 Created (`feature/backend/data-models`), Pending CodeRabbit Review.
+
+---
+
+### 📝 Notes App Progress Report: Module 5 (Authentication & Controllers)
+* **Current State:** Engineered secure user registration and login flows. Integrated `bcryptjs` via Mongoose pre-save hooks to ensure passwords are encrypted before database persistence. Developed a custom Mongoose instance method for secure password comparison during login. Implemented `jsonwebtoken` (JWT) generation to issue stateless, expiring authentication tokens for verified sessions.
+* **Completed Files:**
+  * `backend/src/utils/generateToken.js` (NEW)
+  * `backend/src/controllers/authController.js` (NEW)
+  * `backend/src/routes/authRoutes.js` (NEW)
+  * `backend/src/models/User.js` (Updated with bcrypt logic)
+  * `backend/server.js` (Updated to mount auth routes)
+  * `README.md` (Updated)
+* **Packages Added:** `bcryptjs`, `jsonwebtoken`
+* **Status:** PR #5 Created (`feature/backend/auth-controllers`), Pending CodeRabbit Review.
+
+---
+
+### 📝 Notes App Progress Report: Module 6 (Authentication Middleware)
+* **Current State:** Implemented a zero-trust security perimeter using custom Express middleware. The `protect` middleware successfully intercepts requests, extracts the Bearer token, verifies the JWT signature against the server's secret, and attaches the authenticated user's profile to the request lifecycle. Created a protected `/profile` endpoint to validate the authorization flow.
+* **Completed Files:**
+  * `backend/src/middlewares/authMiddleware.js` (NEW)
+  * `backend/src/controllers/authController.js` (Updated with getUserProfile)
+  * `backend/src/routes/authRoutes.js` (Updated with protected route)
+  * `README.md` (Updated)
+* **Status:** PR #6 Created (`feature/backend/auth-middleware`), Pending CodeRabbit Review.
+
+---
+
+### 📝 Notes App Progress Report: Module 7 (Note Management & CRUD Operations)
+* **Current State:** Implemented complete CRUD functionality for Note management. Engineered strict ownership verification checks within the controllers to ensure users can only modify or delete their own data. Applied the `protect` middleware universally across all note routes to enforce the zero-trust architecture.
+* **Completed Files:**
+  * `backend/src/controllers/noteController.js` (NEW)
+  * `backend/src/routes/noteRoutes.js` (NEW)
+  * `backend/server.js` (Updated to mount note routes)
+  * `README.md` (Updated)
+* **Status:** PR #7 Created (`feature/backend/note-crud`), Pending CodeRabbit Review.
+
+---
+
+### 📝 Notes App Progress Report: Module 8 (Frontend Initialization)
+* **Current State:** Initialized a modern, high-performance React application using Vite. Configured the Vite development server to run on port 3000 and established a proxy to route `/api` requests to the Express backend (port 5000), effectively bypassing CORS restrictions during development. Stripped out default boilerplate to establish a clean enterprise architecture baseline.
+* **Completed Files:**
+  * `frontend/vite.config.js` (NEW)
+  * `frontend/src/App.jsx` (NEW)
+  * `frontend/src/index.css` (Cleaned)
+  * `README.md` (Updated)
+* **Status:** PR #8 Created (`feature/frontend/react-setup`), Pending CodeRabbit Review.
+
+---
+
+## 🔄 Up Next: Module 9 (Frontend Routing & Authentication UI)
+* **Objective:** Implement `react-router-dom` for client-side navigation. Build the Login and Registration screens and connect them to the backend API. Establish global state management to track the authenticated user's session across the application.
