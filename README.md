@@ -49,9 +49,9 @@ This project aims to provide a full-stack web application that allows users to c
 ### Standard Git Workflow
 1. Switch to the integration branch: `git checkout develop`
 2. Sync with upstream changes: `git pull origin develop`
-3. Create the feature branch: `git checkout -b feature/backend/<feature-name>`
+3. Create the feature branch: `git checkout -b feature/<area>/<feature-name>`
 4. Commit frequently: `git commit -m "Detailed description of changes"`
-5. Push changes: `git push origin feature/backend/<feature-name>`
+5. Push changes: `git push origin feature/<area>/<feature-name>`
 6. Create a Pull Request (PR) to `develop` and wait for peer/mentor review.
 
 ---
@@ -63,7 +63,7 @@ This project strictly enforces a Layered Architecture to maintain separation of 
 *   **`/backend/server.js`**: The main entry point that starts up the server.
 *   **`/backend/src/config/`**: Database connection logic (e.g., MongoDB setup).
 *   **`/backend/src/controllers/`**: Core application logic (e.g., loginUser, createNote, deleteNote).
-*   **`/backend/src/middlewares/`**: Pino Logger setup and Global Error Handling.
+*   **`/backend/src/middlewares/`**: Custom Express middleware (e.g., zero-trust authentication protection).
 *   **`/backend/src/models/`**: Database schemas (User and Note models).
 *   **`/backend/src/routes/`**: API endpoints (e.g., POST /api/auth/login).
 *   **`/backend/src/utils/`**: Helper functions (e.g., JWT token generators).
@@ -174,5 +174,14 @@ This project strictly enforces a Layered Architecture to maintain separation of 
 
 ---
 
-## 🔄 Up Next: Module 10 (Note Management UI & CRUD Integration)
-* **Objective:** Build the UI components required to display, create, update, and delete notes on the Dashboard. Connect these components to the protected backend Note routes using Axios, ensuring the JWT token is passed in the Authorization headers.
+### 📝 Notes App Progress Report: Module 10 (Note Management UI & CRUD Integration)
+* **Current State:** Successfully built the Note Management dashboard. Implemented the complete client-side CRUD lifecycle by wiring React state and forms to the protected Express API via Axios. The frontend seamlessly handles dynamic UI updates (optimistic rendering) for creating, editing, and deleting notes without requiring page reloads, all while securely passing the JWT in the HTTP headers.
+* **Completed Files:**
+  * `frontend/src/pages/Dashboard.tsx` (Updated with CRUD logic)
+  * `README.md` (Updated)
+* **Status:** PR #10 Created (`feature/frontend/note-crud`), Pending CodeRabbit Review.
+
+---
+
+## 🔄 Up Next: Module 11 (Application Polish & Quality Assurance)
+* **Objective:** Conduct a final review of the application architecture, ensure strict TypeScript/JavaScript rule compliance, optimize the UI for edge cases, and prepare the codebase for potential deployment or SonarQube static analysis.

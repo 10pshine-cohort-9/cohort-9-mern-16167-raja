@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { AuthResponse } from './Login'; // Importing the shared type
 
 /**
  * Register Page Component
@@ -13,25 +14,25 @@ const Register = () => {
   
   const navigate = useNavigate();
 
-  const submitHandler = async (e: React.FormEvent) => {
+  const submitHandler = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
 
     try {
-      // Hit the register endpoint
-      const { data } = await axios.post('/api/auth/register', {
+      const { data } = await axios.post<AuthResponse>('/api/auth/register', {
         name,
         email,
         password,
       });
 
-      // Save the JWT token and user info to LocalStorage
       localStorage.setItem('userInfo', JSON.stringify(data));
-      
-      // Redirect to the dashboard
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error occurred during registration');
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || 'Error occurred during registration');
+      } else {
+        setError('An unexpected error occurred');
+      }
     }
   };
 

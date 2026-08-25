@@ -4,6 +4,13 @@ const generateToken = require('../utils/generateToken');
 const registerUser = async (req, res, next) => {
     try {
         const { name, email, password } = req.body;
+
+        if (!email || typeof email !== 'string') {
+            const error = new Error('Please provide a valid email string');
+            error.statusCode = 400;
+            throw error;
+        }
+
         const normalizedEmail = email.toLowerCase();
 
         const userExists = await User.findOne({ email: normalizedEmail });
@@ -40,6 +47,13 @@ const registerUser = async (req, res, next) => {
 const loginUser = async (req, res, next) => {
     try {
         const { email, password } = req.body;
+
+        if (!email || typeof email !== 'string') {
+            const error = new Error('Please provide a valid email string');
+            error.statusCode = 400;
+            throw error;
+        }
+
         const normalizedEmail = email.toLowerCase();
 
         const user = await User.findOne({ email: normalizedEmail }).select('+password');
