@@ -1,7 +1,8 @@
 import React, { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { AuthResponse } from './Login';
+// --- UPDATED: Importing ApiErrorResponse ---
+import { AuthResponse, ApiErrorResponse } from './Login'; 
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -27,7 +28,8 @@ const Register = () => {
       localStorage.setItem('userInfo', JSON.stringify(data));
       navigate('/dashboard');
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
+      // --- UPDATED: Using typed ApiErrorResponse ---
+      if (axios.isAxiosError<ApiErrorResponse>(err)) {
         setError(err.response?.data?.message || 'Error occurred during registration');
       } else {
         setError('An unexpected error occurred');

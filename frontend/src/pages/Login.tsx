@@ -9,6 +9,11 @@ export interface AuthResponse {
   token: string;
 }
 
+// --- NEW: Shared ApiErrorResponse contract ---
+export interface ApiErrorResponse {
+  message: string;
+}
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,7 +36,8 @@ const Login = () => {
       localStorage.setItem('userInfo', JSON.stringify(data));
       navigate('/dashboard');
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
+      // --- UPDATED: Using typed ApiErrorResponse ---
+      if (axios.isAxiosError<ApiErrorResponse>(err)) {
         setError(err.response?.data?.message || 'Invalid email or password');
       } else {
         setError('An unexpected error occurred');

@@ -1,12 +1,15 @@
 import React, { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { AuthResponse } from './Login';
+// --- UPDATED: Importing ApiErrorResponse ---
+import { AuthResponse, ApiErrorResponse } from './Login';
 import { getValidSession } from '../components/ProtectedRoute';
 
-// --- NEW: Import React Quill and its CSS ---
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+
+// --- NEW: Security Sanitizer ---
+import DOMPurify from 'dompurify'; 
 
 export interface Note {
   _id: string;
@@ -45,7 +48,8 @@ const Dashboard = () => {
       const { data } = await axios.get<Note[]>('/api/notes', config);
       setNotes(data);
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
+      // --- UPDATED: Using typed ApiErrorResponse ---
+      if (axios.isAxiosError<ApiErrorResponse>(err)) {
         setError(err.response?.data?.message || 'Failed to fetch notes');
       } else {
         setError('An unexpected error occurred while fetching notes');
@@ -59,7 +63,6 @@ const Dashboard = () => {
     e.preventDefault();
     setFormError('');
 
-    // Ensure they don't submit an empty rich text box (ReactQuill leaves <p><br></p> when empty)
     if (!content || content === '<p><br></p>') {
       setFormError('Note content cannot be empty.');
       return;
@@ -68,11 +71,14 @@ const Dashboard = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${userInfo?.token}` } };
       
+      // --- UPDATED: Sanitize before persistence boundary ---
+      const cleanContent = DOMPurify.sanitize(content);
+      
       if (editingNoteId) {
-        const { data } = await axios.put<Note>(`/api/notes/${editingNoteId}`, { title, content }, config);
+        const { data } = await axios.put<Note>(`/api/notes/${editingNoteId}`, { title, content: cleanContent }, config);
         setNotes((currentNotes) => currentNotes.map((note) => (note._id === editingNoteId ? data : note)));
       } else {
-        const { data } = await axios.post<Note>('/api/notes', { title, content }, config);
+        const { data } = await axios.post<Note>('/api/notes', { title, content: cleanContent }, config);
         setNotes((currentNotes) => [data, ...currentNotes]);
       }
       
@@ -81,7 +87,8 @@ const Dashboard = () => {
       setShowForm(false);
       setEditingNoteId(null);
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
+      // --- UPDATED: Using typed ApiErrorResponse ---
+      if (axios.isAxiosError<ApiErrorResponse>(err)) {
         setFormError(err.response?.data?.message || `Failed to ${editingNoteId ? 'update' : 'create'} note`);
       } else {
         setFormError('An unexpected error occurred');
@@ -123,7 +130,6 @@ const Dashboard = () => {
     navigate('/login');
   };
 
-  // Custom toolbar settings for ReactQuill
   const modules = {
     toolbar: [
       [{ 'header': [1, 2, false] }],
@@ -137,7 +143,6 @@ const Dashboard = () => {
   return (
     <div style={{ backgroundColor: '#f3f4f6', minHeight: '100vh', fontFamily: '"Inter", "Segoe UI", sans-serif' }}>
       
-      {/* Top Navigation Bar */}
       <nav style={{ backgroundColor: '#ffffff', padding: '16px 32px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100 }}>
         <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#111827', fontWeight: 700 }}>
           <span style={{ color: '#3b82f6' }}>10P</span> Notes
@@ -155,10 +160,8 @@ const Dashboard = () => {
         </div>
       </nav>
 
-      {/* Main Content Area */}
       <main style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 20px' }}>
         
-        {/* Action Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
           <h2 style={{ margin: 0, fontSize: '1.75rem', color: '#111827' }}>My Dashboard</h2>
           <button 
@@ -171,7 +174,6 @@ const Dashboard = () => {
 
         {error && <div style={{ padding: '12px', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '8px', marginBottom: '20px', border: '1px solid #fecaca' }}>{error}</div>}
 
-        {/* Note Editor Modal/Card */}
         {showForm && (
           <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', marginBottom: '40px', border: '1px solid #e5e7eb', animation: 'fadeIn 0.3s ease-in-out' }}>
             <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#111827', fontSize: '1.25rem' }}>{editingNoteId ? '✏️ Edit Note' : '📝 Create Note'}</h3>
@@ -183,7 +185,6 @@ const Dashboard = () => {
                 style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', outline: 'none' }}
               />
               
-              {/* --- NEW: React Quill Editor --- */}
               <div style={{ marginBottom: '40px' }}>
                 <ReactQuill 
                   theme="snow" 
@@ -206,7 +207,6 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Notes Grid */}
         {isLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
             <div style={{ width: '40px', height: '40px', border: '4px solid #e5e7eb', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
@@ -226,10 +226,10 @@ const Dashboard = () => {
               >
                 <h4 style={{ margin: '0 0 12px 0', color: '#111827', fontSize: '1.25rem', lineHeight: '1.4' }}>{note.title}</h4>
                 
-                {/* --- NEW: Rendering HTML content securely --- */}
+                {/* --- UPDATED: Sanitizing HTML content securely at render boundary --- */}
                 <div 
                   style={{ margin: '0 0 20px 0', color: '#4b5563', lineHeight: '1.6', flexGrow: 1, fontSize: '0.95rem', overflowWrap: 'break-word' }}
-                  dangerouslySetInnerHTML={{ __html: note.content }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.content) }}
                 />
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>
