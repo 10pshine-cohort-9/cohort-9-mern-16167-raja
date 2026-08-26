@@ -6,13 +6,11 @@ import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 
-interface AppProps {}
-
 /**
  * Main Application Component.
  * Implements React Router for client-side navigation.
  */
-function App(props: AppProps) {
+function App() {
   return (
     <Router>
       <Routes>
@@ -40,6 +38,9 @@ function App(props: AppProps) {
             </ProtectedRoute>
           } 
         />
+
+        {/* NEW: Catch-all route to prevent blank screens on bad URLs */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
   );

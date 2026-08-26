@@ -194,22 +194,36 @@ const Dashboard = () => {
         const importedData = JSON.parse(e.target?.result as string);
         if (!Array.isArray(importedData)) throw new Error('Invalid format');
 
-        // --- NEW: Strict pre-validation of entire array before making API calls ---
         const isValid = importedData.every(item => item !== null && typeof item === 'object' && !Array.isArray(item));
         if (!isValid) throw new Error('Invalid format');
 
         setIsLoading(true);
         const config = { headers: { Authorization: `Bearer ${token}` } };
         
+        // FIX: Cap import size
+        const MAX_IMPORT = 200;
+        if (importedData.length > MAX_IMPORT) {
+          throw new Error(`Import is limited to ${MAX_IMPORT} notes per file.`);
+        }
+
+        let imported = 0;
+        let failed = 0;
+        
+        // FIX: Try/catch each individual post so one failure doesn't stop the rest
         for (const note of importedData) {
           const cleanContent = DOMPurify.sanitize(note.content || '');
-          await axios.post<Note>('/api/notes', { title: note.title || 'Imported Note', content: cleanContent }, config);
+          try {
+            await axios.post<Note>('/api/notes', { title: note.title || 'Imported Note', content: cleanContent }, config);
+            imported += 1;
+          } catch {
+            failed += 1;
+          }
         }
 
         await fetchNotes();
-        alert('Notes imported successfully!');
-      } catch (err) {
-        alert('Failed to import notes. Please ensure it is a valid JSON file.');
+        alert(`Imported ${imported} note(s). ${failed} failed.`);
+      } catch (err: any) {
+        alert(err.message || 'Failed to import notes. Please ensure it is a valid JSON file.');
       } finally {
         setIsLoading(false);
         if (fileInputRef.current) fileInputRef.current.value = ''; 
@@ -228,9 +242,17 @@ const Dashboard = () => {
     ],
   };
 
+  // FIX: Helper function to strip HTML tags for accurate searching
+  const toPlainText = (html: string) => {
+    const el = document.createElement('div');
+    el.innerHTML = DOMPurify.sanitize(html);
+    return el.textContent || '';
+  };
+
+  // FIX: Search now uses toPlainText so users don't accidentally search raw HTML tags
   const filteredNotes = notes.filter((note) => 
     note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    note.content.toLowerCase().includes(searchQuery.toLowerCase())
+    toPlainText(note.content).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
