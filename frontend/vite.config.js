@@ -14,4 +14,9 @@ export default defineConfig({
       },
     },
   },
+  // NEW: Testing configuration
+  test: {
+    globals: true,
+    environment: 'jsdom'
+  }
 });
