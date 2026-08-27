@@ -40,10 +40,14 @@ const Profile = () => {
         <div style={{ backgroundColor: '#ffffff', padding: '40px', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb', textAlign: 'center' }}>
           
           <div style={{ width: '80px', height: '80px', backgroundColor: '#e0e7ff', color: '#4f46e5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 700, margin: '0 auto 20px auto' }}>
-            {userInfo.name.charAt(0).toUpperCase()}
+            {/* SAFELY read the first letter of the name, or default to 'U' */}
+            {userInfo?.name ? userInfo.name.charAt(0).toUpperCase() : 'U'}
           </div>
           
-          <h2 style={{ margin: '0 0 8px 0', fontSize: '1.75rem', color: '#111827' }}>{userInfo.name}</h2>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '1.75rem', color: '#111827' }}>
+            {/* SAFELY render the name */}
+            {userInfo?.name || 'User'}
+          </h2>
           <p style={{ margin: '0 0 30px 0', color: '#6b7280', fontSize: '1.1rem' }}>{userInfo.email}</p>
           
           <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '30px', display: 'flex', flexDirection: 'column', gap: '16px' }}>

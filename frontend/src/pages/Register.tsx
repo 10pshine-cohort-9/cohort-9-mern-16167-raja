@@ -1,7 +1,6 @@
 import React, { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-// --- UPDATED: Importing ApiErrorResponse ---
 import { AuthResponse, ApiErrorResponse } from './Login'; 
 
 const Register = () => {
@@ -28,7 +27,6 @@ const Register = () => {
       localStorage.setItem('userInfo', JSON.stringify(data));
       navigate('/dashboard');
     } catch (err: unknown) {
-      // --- UPDATED: Using typed ApiErrorResponse ---
       if (axios.isAxiosError<ApiErrorResponse>(err)) {
         setError(err.response?.data?.message || 'Error occurred during registration');
       } else {
@@ -54,30 +52,37 @@ const Register = () => {
         
         <form onSubmit={submitHandler} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontSize: '0.9rem', fontWeight: 600 }}>Full Name</label>
+            {/* FIX: Added htmlFor and id */}
+            <label htmlFor="register-name" style={{ display: 'block', marginBottom: '8px', color: '#374151', fontSize: '0.9rem', fontWeight: 600 }}>Full Name</label>
             <input 
+              id="register-name"
               type="text" placeholder="Muhammad Ali" value={name} onChange={(e) => setName(e.target.value)} required
               style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', outline: 'none' }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontSize: '0.9rem', fontWeight: 600 }}>Email Address</label>
+            {/* FIX: Added htmlFor and id */}
+            <label htmlFor="register-email" style={{ display: 'block', marginBottom: '8px', color: '#374151', fontSize: '0.9rem', fontWeight: 600 }}>Email Address</label>
             <input 
+              id="register-email"
               type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required
               style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', outline: 'none' }}
             />
           </div>
           
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontSize: '0.9rem', fontWeight: 600 }}>Password</label>
+            {/* FIX: Added htmlFor and id */}
+            <label htmlFor="register-password" style={{ display: 'block', marginBottom: '8px', color: '#374151', fontSize: '0.9rem', fontWeight: 600 }}>Password</label>
             <input 
+              id="register-password"
               type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6}
               style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', outline: 'none' }}
             />
           </div>
           
-          <button type="submit" disabled={isLoading} style={{ width: '100%', padding: '12px', backgroundColor: isLoading ? '#10b981' : '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: isLoading ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '1rem', marginTop: '10px', boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.3)' }}>
+          {/* FIX: Changed backgroundColor so it looks disabled when loading */}
+          <button type="submit" disabled={isLoading} style={{ width: '100%', padding: '12px', backgroundColor: isLoading ? '#6ee7b7' : '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: isLoading ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '1rem', marginTop: '10px', boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.3)' }}>
             {isLoading ? 'Creating account...' : 'Sign Up'}
           </button>
         </form>

@@ -109,11 +109,17 @@ if (isNaN(PORT) || PORT < 0 || PORT > 65535) {
     PORT = 5000;
 }
 
-connectDB().then(() => {
-    server.listen(PORT, () => {
-        console.log(`Server successfully started on port ${server.address().port}`);
+// 1. NEW: Wrap the database connection in this IF statement so it doesn't run during tests
+if (process.env.NODE_ENV !== 'test') {
+    connectDB().then(() => {
+        server.listen(PORT, () => {
+            console.log(`Server successfully started on port ${server.address().port}`);
+        });
+    }).catch((error) => {
+        console.error(`Failed to start server: ${error.message}`);
+        process.exit(1);
     });
-}).catch((error) => {
-    console.error(`Failed to start server: ${error.message}`);
-    process.exit(1);
-});
+}
+
+// 2. NEW: Export the app so Supertest can interact with it
+module.exports = app;

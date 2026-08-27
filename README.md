@@ -209,5 +209,11 @@ This project strictly enforces a Layered Architecture to maintain separation of 
 
 ---
 
-## 🔄 Up Next: Module 13 (Unit Testing & SonarQube Quality Gate)
-* **Objective:** Ensure enterprise-grade code reliability and security. Implement comprehensive Unit Tests using Mocha/Chai for the backend API and Jest for the React frontend. Conduct final static code analysis using a local Dockerized SonarQube instance to identify and resolve vulnerabilities, bugs, and code smells.
+### ✅ Module 13: Comprehensive Unit Testing (Completed)
+* **Backend:** Implemented API integration and unit tests using Mocha, Chai, and Supertest to validate server logic.
+* **Frontend:** Developed UI and state tests using Vitest and React Testing Library to ensure component stability.
+
+### 🛡️ Module 14: SonarQube Quality Gate Integration
+* **Static Analysis:** Spin up a local Dockerized SonarQube instance to scan the entire repository.
+* **Vulnerability & Bug Scanning:** Identify and resolve any remaining code smells, duplications, or security vulnerabilities.
+* **Goal:** Achieve a passing enterprise quality gate and generate the required screenshots for the `SonarCubeReport` directory prior to submission.

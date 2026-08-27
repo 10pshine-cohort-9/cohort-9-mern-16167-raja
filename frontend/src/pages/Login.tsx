@@ -36,7 +36,6 @@ const Login = () => {
       localStorage.setItem('userInfo', JSON.stringify(data));
       navigate('/dashboard');
     } catch (err: unknown) {
-      // --- UPDATED: Using typed ApiErrorResponse ---
       if (axios.isAxiosError<ApiErrorResponse>(err)) {
         setError(err.response?.data?.message || 'Invalid email or password');
       } else {
@@ -62,16 +61,20 @@ const Login = () => {
         
         <form onSubmit={submitHandler} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontSize: '0.9rem', fontWeight: 600 }}>Email Address</label>
+            {/* FIX: Added htmlFor and id */}
+            <label htmlFor="login-email" style={{ display: 'block', marginBottom: '8px', color: '#374151', fontSize: '0.9rem', fontWeight: 600 }}>Email Address</label>
             <input 
+              id="login-email"
               type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required
               style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', outline: 'none' }}
             />
           </div>
           
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#374151', fontSize: '0.9rem', fontWeight: 600 }}>Password</label>
+            {/* FIX: Added htmlFor and id */}
+            <label htmlFor="login-password" style={{ display: 'block', marginBottom: '8px', color: '#374151', fontSize: '0.9rem', fontWeight: 600 }}>Password</label>
             <input 
+              id="login-password"
               type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required
               style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', outline: 'none' }}
             />

@@ -15,6 +15,10 @@ export const getValidSession = (): AuthResponse | null => {
     // Ensure the parsed object actually contains the required token
     if (!userInfo || !userInfo.token) return null;
     
+    // NEW: Reject expired tokens so the guard does not admit a stale session
+    const payload = JSON.parse(atob(userInfo.token.split('.')[1]));
+    if (typeof payload.exp === 'number' && payload.exp * 1000 <= Date.now()) return null;
+    
     return userInfo;
   } catch (error) {
     // If JSON.parse fails (corrupted data), catch it safely
