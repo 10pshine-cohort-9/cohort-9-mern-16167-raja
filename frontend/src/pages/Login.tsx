@@ -1,6 +1,13 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, FormEvent } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+
+export interface AuthResponse {
+  _id: string;
+  name: string;
+  email: string;
+  token: string;
+}
 
 /**
  * Login Page Component
@@ -12,24 +19,24 @@ const Login = () => {
   
   const navigate = useNavigate();
 
-  const submitHandler = async (e: React.FormEvent) => {
+  const submitHandler = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(''); // Clear previous errors
+    setError(''); 
 
     try {
-      // The proxy in vite.config.js automatically routes this to http://localhost:5000/api/auth/login
-      const { data } = await axios.post('/api/auth/login', {
+      const { data } = await axios.post<AuthResponse>('/api/auth/login', {
         email,
         password,
       });
 
-      // Save the JWT token and user info to LocalStorage
       localStorage.setItem('userInfo', JSON.stringify(data));
-      
-      // Redirect to the dashboard
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid email or password');
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || 'Invalid email or password');
+      } else {
+        setError('An unexpected error occurred');
+      }
     }
   };
 
@@ -66,6 +73,10 @@ const Login = () => {
           Sign In
         </button>
       </form>
+
+      <div style={{ marginTop: '15px', textAlign: 'center' }}>
+        Don't have an account? <Link to="/register">Register Here</Link>
+      </div>
     </div>
   );
 };

@@ -6,6 +6,8 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
+      // Note: In production, ensure your deployment (e.g., Express static serving)
+      // routes '/api' requests to the backend server to avoid CORS issues.
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,

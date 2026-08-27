@@ -6,6 +6,12 @@ const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
 const noteRoutes = require('./src/routes/noteRoutes');
 
+// --- ENV VALIDATION ---
+if (!process.env.JWT_SECRET || !process.env.JWT_EXPIRE) {
+    console.error('FATAL ERROR: JWT_SECRET or JWT_EXPIRE is missing in environment variables.');
+    process.exit(1);
+}
+
 // --- APP INITIALIZATION ---
 /** @type {import('express').Application} */
 const app = express();
