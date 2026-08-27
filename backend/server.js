@@ -1,6 +1,9 @@
 // --- IMPORTS ---
 require('dotenv').config();
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken'); // <-- NEW: Added JWT import
 const pinoHttp = require('pino-http');
 const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
@@ -12,11 +15,53 @@ if (!process.env.JWT_SECRET || !process.env.JWT_EXPIRE) {
     process.exit(1);
 }
 
-// --- APP INITIALIZATION ---
+// --- APP & SERVER INITIALIZATION ---
 /** @type {import('express').Application} */
 const app = express();
+const server = http.createServer(app);
+
+// --- SOCKET.IO CONFIGURATION ---
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST", "PUT", "DELETE"]
+    }
+});
+
+// NEW: Authenticate Socket.IO connections before allowing them to join a room
+io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (!token) {
+        return next(new Error('Authentication error: Missing token'));
+    }
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        socket.user = decoded; // Attach the decoded payload
+        next();
+    } catch (error) {
+        next(new Error('Authentication error: Invalid token'));
+    }
+});
+
+io.on('connection', (socket) => {
+    // SECURE: Join room using the verified token ID, ignoring client-supplied data
+    if (socket.user && socket.user.id) {
+        socket.join(socket.user.id.toString());
+        socket.emit('connected');
+    }
+
+    socket.on('disconnect', () => {
+        // Disconnection handled automatically
+    });
+});
 
 // --- MIDDLEWARE ---
+// Inject Socket.IO instance into req object
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+});
+
 app.use(pinoHttp());
 app.use(express.json());
 
@@ -65,7 +110,7 @@ if (isNaN(PORT) || PORT < 0 || PORT > 65535) {
 }
 
 connectDB().then(() => {
-    const server = app.listen(PORT, () => {
+    server.listen(PORT, () => {
         console.log(`Server successfully started on port ${server.address().port}`);
     });
 }).catch((error) => {

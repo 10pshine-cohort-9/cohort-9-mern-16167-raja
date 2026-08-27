@@ -27,6 +27,9 @@ const createNote = async (req, res, next) => {
             content
         });
 
+        // NEW: Broadcast creation to the user's private room
+        req.io.to(req.user._id.toString()).emit('noteCreated', note);
+
         res.status(201).json(note);
     } catch (error) {
         next(error);
@@ -56,6 +59,10 @@ const updateNote = async (req, res, next) => {
         if (content !== undefined) note.content = content;
         
         const updatedNote = await note.save();
+
+        // NEW: Broadcast update to the user's private room
+        req.io.to(req.user._id.toString()).emit('noteUpdated', updatedNote);
+
         res.status(200).json(updatedNote);
     } catch (error) {
         next(error);
@@ -80,6 +87,10 @@ const deleteNote = async (req, res, next) => {
         }
 
         await note.deleteOne();
+
+        // NEW: Broadcast deletion to the user's private room
+        req.io.to(req.user._id.toString()).emit('noteDeleted', req.params.id);
+
         res.status(200).json({ message: 'Note removed successfully' });
     } catch (error) {
         next(error);
