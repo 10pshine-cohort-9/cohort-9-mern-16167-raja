@@ -1,8 +1,15 @@
 import React, { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { AuthResponse } from './Login';
-import { getValidSession } from '../components/ProtectedRoute'; // Importing our new safe parser
+// --- UPDATED: Importing ApiErrorResponse ---
+import { AuthResponse, ApiErrorResponse } from './Login';
+import { getValidSession } from '../components/ProtectedRoute';
+
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+
+// --- NEW: Security Sanitizer ---
+import DOMPurify from 'dompurify'; 
 
 export interface Note {
   _id: string;
@@ -14,6 +21,7 @@ export interface Note {
 const Dashboard = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
@@ -22,8 +30,6 @@ const Dashboard = () => {
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   
   const navigate = useNavigate();
-
-  // Use the safe helper instead of direct JSON.parse
   const userInfo = getValidSession();
 
   useEffect(() => {
@@ -37,15 +43,19 @@ const Dashboard = () => {
 
   const fetchNotes = async () => {
     try {
+      setIsLoading(true);
       const config = { headers: { Authorization: `Bearer ${userInfo?.token}` } };
       const { data } = await axios.get<Note[]>('/api/notes', config);
       setNotes(data);
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
+      // --- UPDATED: Using typed ApiErrorResponse ---
+      if (axios.isAxiosError<ApiErrorResponse>(err)) {
         setError(err.response?.data?.message || 'Failed to fetch notes');
       } else {
         setError('An unexpected error occurred while fetching notes');
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -53,18 +63,22 @@ const Dashboard = () => {
     e.preventDefault();
     setFormError('');
 
+    if (!content || content === '<p><br></p>') {
+      setFormError('Note content cannot be empty.');
+      return;
+    }
+
     try {
       const config = { headers: { Authorization: `Bearer ${userInfo?.token}` } };
       
+      // --- UPDATED: Sanitize before persistence boundary ---
+      const cleanContent = DOMPurify.sanitize(content);
+      
       if (editingNoteId) {
-        const { data } = await axios.put<Note>(`/api/notes/${editingNoteId}`, { title, content }, config);
-        // FIX: Use functional state update to prevent race conditions
-        setNotes((currentNotes) => 
-          currentNotes.map((note) => (note._id === editingNoteId ? data : note))
-        );
+        const { data } = await axios.put<Note>(`/api/notes/${editingNoteId}`, { title, content: cleanContent }, config);
+        setNotes((currentNotes) => currentNotes.map((note) => (note._id === editingNoteId ? data : note)));
       } else {
-        const { data } = await axios.post<Note>('/api/notes', { title, content }, config);
-        // FIX: Use functional state update
+        const { data } = await axios.post<Note>('/api/notes', { title, content: cleanContent }, config);
         setNotes((currentNotes) => [data, ...currentNotes]);
       }
       
@@ -73,7 +87,8 @@ const Dashboard = () => {
       setShowForm(false);
       setEditingNoteId(null);
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
+      // --- UPDATED: Using typed ApiErrorResponse ---
+      if (axios.isAxiosError<ApiErrorResponse>(err)) {
         setFormError(err.response?.data?.message || `Failed to ${editingNoteId ? 'update' : 'create'} note`);
       } else {
         setFormError('An unexpected error occurred');
@@ -91,19 +106,12 @@ const Dashboard = () => {
 
   const handleDeleteNote = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this note?')) return;
-
     try {
       const config = { headers: { Authorization: `Bearer ${userInfo?.token}` } };
       await axios.delete(`/api/notes/${id}`, config);
-      
-      // FIX: Use functional state update
       setNotes((currentNotes) => currentNotes.filter((note) => note._id !== id));
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        alert(err.response?.data?.message || 'Failed to delete note');
-      } else {
-        alert('An unexpected error occurred while deleting');
-      }
+      alert('Failed to delete note');
     }
   };
 
@@ -122,67 +130,126 @@ const Dashboard = () => {
     navigate('/login');
   };
 
+  const modules = {
+    toolbar: [
+      [{ 'header': [1, 2, false] }],
+      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+      [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
+      ['link'],
+      ['clean']
+    ],
+  };
+
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ backgroundColor: '#f3f4f6', minHeight: '100vh', fontFamily: '"Inter", "Segoe UI", sans-serif' }}>
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>Welcome, {userInfo?.name}!</h2>
-        <button onClick={handleLogout} style={{ padding: '8px 15px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-          Logout
-        </button>
-      </div>
-
-      <hr style={{ margin: '20px 0', border: '1px solid #eee' }} />
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h3>My Notes</h3>
-        <button onClick={handleToggleForm} style={{ padding: '8px 15px', backgroundColor: showForm ? '#6c757d' : '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-          {showForm ? 'Cancel' : '+ Create Note'}
-        </button>
-      </div>
-
-      {error && <div style={{ color: 'red', marginBottom: '15px', padding: '10px', backgroundColor: '#f8d7da', borderRadius: '4px' }}>{error}</div>}
-
-      {showForm && (
-        <div style={{ marginBottom: '30px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #ddd' }}>
-          <h4 style={{ marginTop: 0 }}>{editingNoteId ? 'Edit Note' : 'Create a New Note'}</h4>
-          {formError && <div style={{ color: 'red', marginBottom: '10px' }}>{formError}</div>}
-          <form onSubmit={handleSubmitNote} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <input 
-              type="text" placeholder="Note Title" value={title} onChange={(e) => setTitle(e.target.value)} required 
-              style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
-            />
-            <textarea 
-              placeholder="Write your note details here..." value={content} onChange={(e) => setContent(e.target.value)} required rows={4}
-              style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', resize: 'vertical' }}
-            />
-            <button type="submit" style={{ padding: '10px', backgroundColor: editingNoteId ? '#ffc107' : '#007bff', color: editingNoteId ? 'black' : 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-              {editingNoteId ? 'Update Note' : 'Save Note'}
-            </button>
-          </form>
+      <nav style={{ backgroundColor: '#ffffff', padding: '16px 32px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100 }}>
+        <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#111827', fontWeight: 700 }}>
+          <span style={{ color: '#3b82f6' }}>10P</span> Notes
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <span style={{ color: '#4b5563', fontWeight: 500 }}>Hello, {userInfo?.name?.split(' ')[0]}</span>
+          <button 
+            onClick={handleLogout} 
+            style={{ padding: '8px 16px', backgroundColor: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
+          >
+            Logout
+          </button>
         </div>
-      )}
+      </nav>
 
-      {notes.length === 0 ? (
-        <p style={{ color: '#666', fontStyle: 'italic' }}>No notes found. Create your first note!</p>
-      ) : (
-        <div style={{ display: 'grid', gap: '15px' }}>
-          {notes.map((note) => (
-            <div key={note._id} style={{ border: '1px solid #ddd', padding: '15px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-              <h4 style={{ margin: '0 0 10px 0', color: '#333' }}>{note.title}</h4>
-              <p style={{ margin: '0 0 15px 0', color: '#555', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{note.content}</p>
+      <main style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 20px' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+          <h2 style={{ margin: 0, fontSize: '1.75rem', color: '#111827' }}>My Dashboard</h2>
+          <button 
+            onClick={handleToggleForm}
+            style={{ padding: '10px 20px', backgroundColor: showForm ? '#6b7280' : '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.3)', transition: 'background-color 0.2s' }}
+          >
+            {showForm ? 'Close Editor' : '+ Create New Note'}
+          </button>
+        </div>
+
+        {error && <div style={{ padding: '12px', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '8px', marginBottom: '20px', border: '1px solid #fecaca' }}>{error}</div>}
+
+        {showForm && (
+          <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', marginBottom: '40px', border: '1px solid #e5e7eb', animation: 'fadeIn 0.3s ease-in-out' }}>
+            <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#111827', fontSize: '1.25rem' }}>{editingNoteId ? '✏️ Edit Note' : '📝 Create Note'}</h3>
+            {formError && <div style={{ color: '#ef4444', marginBottom: '16px', fontSize: '0.875rem' }}>{formError}</div>}
+            
+            <form onSubmit={handleSubmitNote} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <input 
+                type="text" placeholder="Give your note a title..." value={title} onChange={(e) => setTitle(e.target.value)} required 
+                style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', outline: 'none' }}
+              />
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <small style={{ color: '#999' }}>{new Date(note.createdAt).toLocaleDateString()}</small>
-                <div>
-                  <button onClick={() => handleEditClick(note)} style={{ padding: '5px 10px', marginRight: '5px', backgroundColor: '#ffc107', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Edit</button>
-                  <button onClick={() => handleDeleteNote(note._id)} style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Delete</button>
+              <div style={{ marginBottom: '40px' }}>
+                <ReactQuill 
+                  theme="snow" 
+                  value={content} 
+                  onChange={setContent} 
+                  modules={modules}
+                  style={{ height: '200px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+                <button type="button" onClick={handleToggleForm} style={{ padding: '10px 20px', backgroundColor: 'transparent', color: '#4b5563', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                  Cancel
+                </button>
+                <button type="submit" style={{ padding: '10px 24px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.3)' }}>
+                  {editingNoteId ? 'Save Changes' : 'Publish Note'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+            <div style={{ width: '40px', height: '40px', border: '4px solid #e5e7eb', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+            <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+          </div>
+        ) : notes.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px dashed #d1d5db' }}>
+            <h3 style={{ color: '#4b5563', margin: '0 0 8px 0' }}>It's quiet here...</h3>
+            <p style={{ color: '#9ca3af', margin: 0 }}>Click the button above to create your first note.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
+            {notes.map((note) => (
+              <div key={note._id} style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', border: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s', cursor: 'default' }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                <h4 style={{ margin: '0 0 12px 0', color: '#111827', fontSize: '1.25rem', lineHeight: '1.4' }}>{note.title}</h4>
+                
+                {/* --- UPDATED: Sanitizing HTML content securely at render boundary --- */}
+                <div 
+                  style={{ margin: '0 0 20px 0', color: '#4b5563', lineHeight: '1.6', flexGrow: 1, fontSize: '0.95rem', overflowWrap: 'break-word' }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.content) }}
+                />
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>
+                  <span style={{ color: '#9ca3af', fontSize: '0.85rem' }}>
+                    {new Date(note.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => handleEditClick(note)} style={{ padding: '6px 12px', backgroundColor: '#fef3c7', color: '#d97706', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
+                      Edit
+                    </button>
+                    <button onClick={() => handleDeleteNote(note._id)} style={{ padding: '6px 12px', backgroundColor: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 };
