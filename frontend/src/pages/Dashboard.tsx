@@ -116,7 +116,12 @@ const Dashboard = () => {
         setNotes((currentNotes) => currentNotes.map((note) => (note._id === editingNoteId ? data : note)));
       } else {
         const { data } = await axios.post<Note>('/api/notes', { title, content: cleanContent }, config);
-        setNotes((currentNotes) => [data, ...currentNotes]);
+        
+        // FIX: Check if Socket.IO already added this note before pushing it to state
+        setNotes((currentNotes) => {
+          if (currentNotes.some((n) => n._id === data._id)) return currentNotes;
+          return [data, ...currentNotes];
+        });
       }
       
       setTitle('');
