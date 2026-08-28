@@ -148,7 +148,7 @@ Cohort 9 — MERN (NodeJS+ReactJS) assignment for Raja Abdul Rafay
 ---
 
 ### 🐛 Bugfix: Socket.IO Race Condition & Note Sorting
-* **Current State:** Identified and resolved a frontend race condition where Socket.IO broadcast events and Axios HTTP responses caused duplicate note rendering. Engineered a strict uniqueness check within the React state updater. Additionally, patched a data-fetching anomaly in the backend controller by forcing MongoDB to return documents ordered by `_id: -1`, ensuring newly created notes maintain their position at the top of the dashboard across session refreshes.
+* **Current State:** Identified and resolved a frontend race condition where Socket.IO broadcast events and Axios HTTP responses caused duplicate note rendering. Engineered a strict uniqueness check within the React state updater. Additionally, patched a data-fetching anomaly in the backend controller by forcing MongoDB to return documents ordered by `createdAt: -1`, ensuring newly created notes maintain their position at the top of the dashboard across session refreshes.
 * **Completed Files:**
   * `frontend/src/pages/Dashboard.tsx` (Updated socket state logic)
   * `backend/src/controllers/noteController.js` (Updated database sorting query)
