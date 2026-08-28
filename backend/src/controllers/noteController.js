@@ -3,7 +3,8 @@ const Note = require('../models/Note');
 /** @type {import('express').RequestHandler} */
 const getNotes = async (req, res, next) => {
     try {
-        const notes = await Note.find({ user: req.user._id });
+        // FIX: Added .sort({ createdAt: -1 }) to fetch newest notes first
+        const notes = await Note.find({ user: req.user._id }).sort({ createdAt: -1 });
         res.status(200).json(notes);
     } catch (error) {
         next(error);
